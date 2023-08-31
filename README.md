@@ -1,1 +1,1 @@
-# PomoBlocker
+# CHIP-8 Emulator
