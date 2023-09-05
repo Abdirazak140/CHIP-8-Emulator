@@ -1,9 +1,10 @@
-import pygame.display
+import pygame
+import time
 
 
 class CPU:
-    def __init__(self) -> None:
-        self.memory = [0] * 4096
+    def __init__(self, file_name):
+        self.memory = [0] * 4096 
         self.register_v = [0] * 16
         self.register_I = 0
         self.pc = 0x200
@@ -26,31 +27,48 @@ class CPU:
             [0xF0, 0x80, 0xF0, 0x80, 0x80]  # F
         ]
         self.screen = Screen()
+        self.init_ROM(file_name)
         self.delay_timer = 0
         self.sound_timer = 0
         
         
-    def loadProgram(self, file_name):
+    def init_ROM(self, file_name):
         try:
             with open(file_name, "rb") as file:
                 program_data = file.read()
                 
                 for i, byte in enumerate(program_data):
                     self.memory[0x200 + i] = byte
+                    
+            self.fetch_instructions()
+            
         except:
             print("File does not exist")
+            exit()
         
     
-    def fetch_instruction(self):
+    def fetch_instructions(self):
+        counter = 0
+        start = time.time()
         
-        while True: 
+        while True:
+            if self.pc > len(self.memory):
+                break
+            
             first_byte = self.memory[self.pc]
             second_byte = self.memory[self.pc + 1]
             combinedBytes = (first_byte << 8) | second_byte
             
+            current_pc = self.pc
+            
             self.decode_instruction(combinedBytes)
             
-            self.pc += 2
+            if current_pc == self.pc:
+                self.pc += 2
+        
+        end = time.time()
+        
+        print(end-start)
             
     def decode_instruction(self, instruction):
         print(hex(instruction))
@@ -65,13 +83,12 @@ class CPU:
         match instruction_type:
             case 0x0:
                 # Clear screen
-                # Display not implemented
-                pass
+                # self.screen.clear_screen()
+                print("clear")
                 
             case 0x1:
                 # PC jumps
                 self.pc = NNN
-                # Race condition issue
                 
             case 0x6:
                 # Set register vx to NN
@@ -87,7 +104,12 @@ class CPU:
                 
             case 0xD:
                 # Display/Draw
-                self.screen
+                x_axis = self.register_v[X] & 64
+                y_axis = self.register_v[Y] & 31
+                address = self.register_I
+                
+                print("draw")
+                # self.screen.draw(x_axis, y_axis, N)
                 
                 
             case _:
@@ -97,7 +119,7 @@ class CPU:
 class Screen:
     def __init__(self) -> None:
         pygame.init()
-        screen = pygame.display.set_mode((64,32))
+        self.screen = pygame.display.set_mode((64,32))
         pygame.display.set_caption("CHIP 8 Emulator")
         running = True
         
@@ -107,12 +129,17 @@ class Screen:
                 if event.type == pygame.QUIT:
                     running = False
     
-    def draw(self):
-        pass
+    def draw(self, x_axis, y_axis, n):
+        self.screen.set_at((x_axis, y_axis), (255, 255, 255))
+    
+    def clear_screen(self):
+        self.screen.fill((0,0,0))
+        pygame.display.flip()
+        
 
     
 def main():
-    cpu = CPU()
+    cpu = CPU("IBM Logo.ch8")
     
 
 
