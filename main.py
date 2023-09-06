@@ -48,7 +48,7 @@ class CPU:
         
     
     def fetch_instructions(self):
-        counter = 0
+        # counter = 0
         start = time.time()
         
         while True:
@@ -83,7 +83,7 @@ class CPU:
         match instruction_type:
             case 0x0:
                 # Clear screen
-                # self.screen.clear_screen()
+                self.screen.clear_screen()
                 print("clear")
                 
             case 0x1:
@@ -108,9 +108,7 @@ class CPU:
                 y_axis = self.register_v[Y] & 31
                 address = self.register_I
                 
-                print("draw")
                 # self.screen.draw(x_axis, y_axis, N)
-                
                 
             case _:
                 print("Unknown instruction {:x}".format(instruction))
@@ -119,6 +117,9 @@ class CPU:
 class Screen:
     def __init__(self) -> None:
         pygame.init()
+        self.x_axis = 0
+        self.y_axis = 0
+        self.clear = False
         self.screen = pygame.display.set_mode((64,32))
         pygame.display.set_caption("CHIP 8 Emulator")
         running = True
@@ -128,13 +129,23 @@ class Screen:
                 
                 if event.type == pygame.QUIT:
                     running = False
+                    
+            if self.clear is True:
+                self.screen.fill((0,0,0))
+                pygame.display.flip()
+                self.clear = False
+                
+            if self.x_axis != 0 and self.y_axis != 0:
+                self.screen.set_at((self.x_axis, self.y_axis), (255, 255, 255))
+            
+            
     
-    def draw(self, x_axis, y_axis, n):
-        self.screen.set_at((x_axis, y_axis), (255, 255, 255))
+    def draw_pixel(self, x_axis, y_axis, n):
+        self.x_axis = x_axis
+        self.y_axis = y_axis
     
     def clear_screen(self):
-        self.screen.fill((0,0,0))
-        pygame.display.flip()
+        self.clear = True
         
 
     
