@@ -41,12 +41,12 @@ class CPU:
         try:
             with open(file_name, "rb") as file:
                 program_data = file.read()
-                
+                # print(program_data)
                 for i, byte in enumerate(program_data):
+                    # print(hex(byte))
                     self.memory[0x200 + i] = byte
-                    
-            self.fetch_instructions()
-            
+                
+                self.fetch_instructions()                
         except:
             print("File does not exist")
             exit()
@@ -89,7 +89,6 @@ class CPU:
             case 0x0:
                 # Clear screen
                 self.screen.clear_screen()
-                print("clear")
                 
             case 0x1:
                 # PC jumps
