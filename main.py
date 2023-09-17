@@ -1,4 +1,4 @@
-import pygame
+# import pygame
 import time
 
 
@@ -30,7 +30,8 @@ class CPU:
         for i in range(len(font)):
             self.memory[i] = font[i]
         
-        self.screen = Screen()
+        self.pixels_on_screen = [[0]*32]*64
+        # self.screen = Screen()
         self.init_ROM(file_name)
         self.delay_timer = 0
         self.sound_timer = 0
@@ -40,12 +41,12 @@ class CPU:
         try:
             with open(file_name, "rb") as file:
                 program_data = file.read()
-                
+                # print(program_data)
                 for i, byte in enumerate(program_data):
+                    # print(hex(byte))
                     self.memory[0x200 + i] = byte
-                    
-            self.fetch_instructions()
-            
+                
+                self.fetch_instructions()                
         except:
             print("File does not exist")
             exit()
@@ -88,7 +89,6 @@ class CPU:
             case 0x0:
                 # Clear screen
                 self.screen.clear_screen()
-                print("clear")
                 
             case 0x1:
                 # PC jumps
@@ -110,58 +110,77 @@ class CPU:
                 # Display/Draw
                 x_axis = self.register_v[X] & 64
                 y_axis = self.register_v[Y] & 31
-                self.register_v[Y] = 0
+                self.register_v[0xf] = 0
                 
-                sprite = "{0:08b}".format(self.register_I + N)
+                last_sprite = self.register_I + N
+                i = 0
                 
-                for bit in sprite:
-                    pass
+                while True:
+                    current_sprite = i + self.register_I
+                    current_sprite_str = "{0:08b}".format(current_sprite)
+                    
+                    for pixel in current_sprite_str:
+                        if pixel == "1" and self.pixels_on_screen[x_axis][y_axis] == 1:
+                            self.pixels_on_screen[x_axis][y_axis] = 0
+                            self.register_v[0xf] = 1
+                            
+                        if pixel == "1" and self.pixels_on_screen[x_axis][y_axis] == 0:
+                            # Draw pixel at x and y
+                            pass
+                        
+                        if y_axis == 32:
+                            break
+                        
+                        x_axis+=1
                 
-                # self.screen.draw(x_axis, y_axis, N)
+                    if last_sprite == current_sprite:
+                        break
+                    
+                    i+= 1
                 
             case _:
                 print("Unknown instruction {:x}".format(instruction))
                 
                   
-class Screen:
-    def __init__(self) -> None:
-        pygame.init()
-        self.x_axis = 0
-        self.y_axis = 0
-        self.clear = False
-        self.screen = pygame.display.set_mode((64,32))
-        pygame.display.set_caption("CHIP 8 Emulator")
-        running = True
+# class Screen:
+#     def __init__(self) -> None:
+#         pygame.init()
+#         self.x_axis = 0
+#         self.y_axis = 0
+#         self.clear = False
+#         self.screen = pygame.display.set_mode((64,32))
+#         pygame.display.set_caption("CHIP 8 Emulator")
+#         running = True
         
-        while running:
-            for event in pygame.event.get():
+#         while running:
+#             for event in pygame.event.get():
                 
-                if event.type == pygame.QUIT:
-                    running = False
+#                 if event.type == pygame.QUIT:
+#                     running = False
                     
-            if self.clear is True:
-                self.screen.fill((0,0,0))
-                pygame.display.flip()
-                self.clear = False
+#             if self.clear is True:
+#                 self.screen.fill((0,0,0))
+#                 pygame.display.flip()
+#                 self.clear = False
                 
-            if self.x_axis != 0 and self.y_axis != 0:
-                self.screen.set_at((self.x_axis, self.y_axis), (255, 255, 255))
+#             if self.x_axis != 0 and self.y_axis != 0:
+#                 self.screen.set_at((self.x_axis, self.y_axis), (255, 255, 255))
             
             
     
-    def draw_pixel(self, x_axis, y_axis, n):
-        self.x_axis = x_axis
-        self.y_axis = y_axis
+    # def draw_pixel(self, x_axis, y_axis, n):
+    #     self.x_axis = x_axis
+    #     self.y_axis = y_axis
     
-    def clear_screen(self):
-        self.clear = True
+    # def clear_screen(self):
+    #     self.clear = True
         
 
     
-def main():
-    cpu = CPU("IBM Logo.ch8")
+def Emulator():
+    cpu = CPU("logo.ch8")
     
 
 
 if __name__ == '__main__':
-    main()
+    Emulator()
