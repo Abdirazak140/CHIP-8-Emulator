@@ -31,7 +31,6 @@ class CPU:
             self.memory[i] = font[i]
         
         self.pixels_on_screen = [[0]*32]*64
-        # self.screen = Screen()
         self.init_ROM(file_name)
         self.delay_timer = 0
         self.sound_timer = 0
@@ -41,9 +40,8 @@ class CPU:
         try:
             with open(file_name, "rb") as file:
                 program_data = file.read()
-                # print(program_data)
+
                 for i, byte in enumerate(program_data):
-                    # print(hex(byte))
                     self.memory[0x200 + i] = byte
                 
                 self.fetch_instructions()                
@@ -54,12 +52,11 @@ class CPU:
     
     def fetch_instructions(self):
         # counter = 0
+        
         start = time.time()
         
-        while True:
-            if self.pc > len(self.memory):
-                break
-            
+        while self.pc < len(self.memory):  
+             
             first_byte = self.memory[self.pc]
             second_byte = self.memory[self.pc + 1]
             combinedBytes = (first_byte << 8) | second_byte
@@ -67,7 +64,7 @@ class CPU:
             current_pc = self.pc
             
             self.decode_instruction(combinedBytes)
-            
+
             if current_pc == self.pc:
                 self.pc += 2
         
@@ -78,33 +75,33 @@ class CPU:
     def decode_instruction(self, instruction):
         print(hex(instruction))
         instruction_type = instruction >> 12
-        
+        print("Instruction type: {0}".format(instruction_type))
         X = (instruction >> 8) & 0xf
         Y = (instruction >> 4) & 0xfff & 0xf
         N = instruction & 0xf
         NN = instruction & 0xff
         NNN = instruction & 0xfff
         
+        print(hex(X), hex(Y), hex(N), hex(NN), hex(NNN))
         match instruction_type:
             case 0x0:
-                # Clear screen
-                self.screen.clear_screen()
+                print("Screen Cleared")
                 
             case 0x1:
-                # PC jumps
                 self.pc = NNN
+                print("PC Jump")
                 
             case 0x6:
-                # Set register vx to NN
                 self.register_v[X] = NN
+                print("Set register vx to NN")
                 
             case 0x7:
-                # Add NN to register vx
                 self.register_v[X] += NN
+                print("Add NN to register vx")
                             
             case 0xA:
-                # Set register I to NNN
                 self.register_I = NNN
+                print("Set register I to NNN")
                 
             case 0xD:
                 # Display/Draw
@@ -125,8 +122,7 @@ class CPU:
                             self.register_v[0xf] = 1
                             
                         if pixel == "1" and self.pixels_on_screen[x_axis][y_axis] == 0:
-                            # Draw pixel at x and y
-                            pass
+                            print("Draw at {0} {1}".format(x_axis,y_axis))
                         
                         if y_axis == 32:
                             break
