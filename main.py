@@ -1,4 +1,4 @@
-# import pygame
+import pygame
 import time
 
 
@@ -31,32 +31,35 @@ class CPU:
             self.memory[i] = font[i]
         
         self.pixels_on_screen = [[0]*32]*64
-        self.init_ROM(file_name)
         self.delay_timer = 0
         self.sound_timer = 0
+        self.display = Screen()
+        self.init_ROM(file_name)
+        
         
         
     def init_ROM(self, file_name):
         try:
             with open(file_name, "rb") as file:
                 program_data = file.read()
-
+        
                 for i, byte in enumerate(program_data):
                     self.memory[0x200 + i] = byte
-                
+
                 self.fetch_instructions()                
-        except:
-            print("File does not exist")
+        except Exception as e:
+            print(e)
             exit()
         
     
     def fetch_instructions(self):
-        # counter = 0
-        
+        num_of_intructions = 0
         start = time.time()
-        
-        while self.pc < len(self.memory):  
-             
+
+        while self.pc < len(self.memory):
+        # while self.pc < 644:
+            num_of_intructions+=1
+            
             first_byte = self.memory[self.pc]
             second_byte = self.memory[self.pc + 1]
             combinedBytes = (first_byte << 8) | second_byte
@@ -69,107 +72,123 @@ class CPU:
                 self.pc += 2
         
         end = time.time()
+        time_took = end-start
+        print("Number of Instructions: {0} \nTime took: {1}".format(num_of_intructions,time_took))
         
-        print(end-start)
             
     def decode_instruction(self, instruction):
         print(hex(instruction))
         instruction_type = instruction >> 12
         print("Instruction type: {0}".format(instruction_type))
+        
         X = (instruction >> 8) & 0xf
         Y = (instruction >> 4) & 0xfff & 0xf
         N = instruction & 0xf
         NN = instruction & 0xff
         NNN = instruction & 0xfff
-        
         print(hex(X), hex(Y), hex(N), hex(NN), hex(NNN))
+        
         match instruction_type:
             case 0x0:
-                print("Screen Cleared")
+                self.clear_screen()
                 
             case 0x1:
-                self.pc = NNN
-                print("PC Jump")
+                self.jump_program_counter(NNN)
                 
             case 0x6:
-                self.register_v[X] = NN
-                print("Set register vx to NN")
+                self.set_register_vx(X, NN)
                 
             case 0x7:
-                self.register_v[X] += NN
-                print("Add NN to register vx")
+                self.add_to_register_vx(X, NN)
                             
             case 0xA:
-                self.register_I = NNN
-                print("Set register I to NNN")
+                self.set_index(NNN)
                 
             case 0xD:
-                # Display/Draw
-                x_axis = self.register_v[X] & 64
-                y_axis = self.register_v[Y] & 31
-                self.register_v[0xf] = 0
-                
-                last_sprite = self.register_I + N
-                i = 0
-                
-                while True:
-                    current_sprite = i + self.register_I
-                    current_sprite_str = "{0:08b}".format(current_sprite)
-                    
-                    for pixel in current_sprite_str:
-                        if pixel == "1" and self.pixels_on_screen[x_axis][y_axis] == 1:
-                            self.pixels_on_screen[x_axis][y_axis] = 0
-                            self.register_v[0xf] = 1
-                            
-                        if pixel == "1" and self.pixels_on_screen[x_axis][y_axis] == 0:
-                            print("Draw at {0} {1}".format(x_axis,y_axis))
-                        
-                        if y_axis == 32:
-                            break
-                        
-                        x_axis+=1
-                
-                    if last_sprite == current_sprite:
-                        break
-                    
-                    i+= 1
+                self.draw_sprite(X, Y, N)
                 
             case _:
                 print("Unknown instruction {:x}".format(instruction))
                 
-                  
-# class Screen:
-#     def __init__(self) -> None:
-#         pygame.init()
-#         self.x_axis = 0
-#         self.y_axis = 0
-#         self.clear = False
-#         self.screen = pygame.display.set_mode((64,32))
-#         pygame.display.set_caption("CHIP 8 Emulator")
-#         running = True
-        
-#         while running:
-#             for event in pygame.event.get():
+    def clear_screen(self):
+        print("Screen Cleared\n\n")
+    
+    def jump_program_counter(self, NNN):
+        self.pc = NNN
+        print("PC Jump\n\n")
+    
+    def set_register_vx(self, X, NN):
+        self.register_v[X] = NN
+        print("Set register vx to NN\n\n")
+    
+    def add_to_register_vx(self, X, NN):
+        self.register_v[X] += NN
+        print("Add NN to register vx\n\n")
+
+    
+    def set_index(self, NNN):
+        self.register_I = NNN
+        print("Set register I to NNN\n\n")
+    
+    
+    def draw_sprite(self, X, Y, N):
+        x_axis = self.register_v[X] % 64
+        y_axis = self.register_v[Y] % 32
+        self.register_v[0xf] = 0   
+
+        for row in range(N):
+            current_sprite = "{0:08b}".format(self.memory[self.register_I + row])
+            print("\nSprite: {0}".format(current_sprite))
+            
+            for pixel in current_sprite:
                 
-#                 if event.type == pygame.QUIT:
-#                     running = False
+                if x_axis >= 64:
+                    break
+                
+                screen_pixel = self.pixels_on_screen[x_axis][y_axis]
+                print("Sprite Pixel: {0}  Screen Pixel: {1}".format(pixel, screen_pixel))
+                 
+                if pixel == "1" and screen_pixel == 1:
+                    self.pixels_on_screen[x_axis][y_axis] = 0      
+                    self.register_v[0xf] = 1
+                    self.display.delete_pixel(x_axis, y_axis)
+                    print("Delete at {0} {1}".format(x_axis,y_axis))
                     
-#             if self.clear is True:
-#                 self.screen.fill((0,0,0))
-#                 pygame.display.flip()
-#                 self.clear = False
+                if pixel == "1" and screen_pixel == 0:
+                    self.pixels_on_screen[x_axis][y_axis] = 1
+                    self.display.draw_pixel(x_axis, y_axis)
+                    print("Draw at {0} {1}".format(x_axis,y_axis))
                 
-#             if self.x_axis != 0 and self.y_axis != 0:
-#                 self.screen.set_at((self.x_axis, self.y_axis), (255, 255, 255))
+                x_axis+=1
+            y_axis+=1
             
-            
+            if y_axis >= 32:
+                break
+                
+                  
+class Screen:
+    def __init__(self) -> None:
+        pygame.init()
+        self.x_axis = 0
+        self.y_axis = 0
+        self.clear = False
+        self.screen = pygame.display.set_mode((640,320))
+        pygame.display.set_caption("CHIP 8 Emulator")    
     
-    # def draw_pixel(self, x_axis, y_axis, n):
-    #     self.x_axis = x_axis
-    #     self.y_axis = y_axis
+    def draw_pixel(self, x_axis, y_axis):
+        self.screen.set_at((x_axis, y_axis), (255, 255, 255))
+        pygame.display.flip()
+        
+    def delete_pixel(self, x_axis, y_axis):
+        self.screen.set_at((x_axis, y_axis), (0, 0, 0))
+        pygame.display.flip()
     
-    # def clear_screen(self):
-    #     self.clear = True
+    def clear_screen(self):
+        self.screen.fill((0,0,0))
+        pygame.display.flip()
+        
+    def quit(self):
+        pygame.quit()
         
 
     
