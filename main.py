@@ -1,10 +1,11 @@
 import pygame
 import time
-
+import random
 
 class CPU:
     def __init__(self, file_name):
         self.memory = [0] * 4096 
+        self.memory_stack = []
         self.register_v = [0] * 16
         self.register_I = 0
         self.pc = 0x200
@@ -37,7 +38,6 @@ class CPU:
         self.init_ROM(file_name)
         
         
-        
     def init_ROM(self, file_name):
         try:
             with open(file_name, "rb") as file:
@@ -57,7 +57,7 @@ class CPU:
         start = time.time()
 
         while self.pc < len(self.memory):
-        # while self.pc < 644:
+            time.sleep(0.05)
             num_of_intructions+=1
             
             first_byte = self.memory[self.pc]
@@ -74,92 +74,194 @@ class CPU:
         end = time.time()
         time_took = end-start
         print("Number of Instructions: {0} \nTime took: {1}".format(num_of_intructions,time_took))
-        
+        exit()
             
     def decode_instruction(self, instruction):
+        opcode = instruction >> 12
         print(hex(instruction))
-        instruction_type = instruction >> 12
-        print("Instruction type: {0}".format(instruction_type))
+        # print("Instruction type: {0}".format(opcode))
         
-        X = (instruction >> 8) & 0xf
-        Y = (instruction >> 4) & 0xfff & 0xf
-        N = instruction & 0xf
-        NN = instruction & 0xff
-        NNN = instruction & 0xfff
-        print(hex(X), hex(Y), hex(N), hex(NN), hex(NNN))
+        X = (instruction >> 8) & 0xf           # Second nibble
+        Y = (instruction >> 4) & 0xfff & 0xf   # Third nibble
+        N = instruction & 0xf                  # Fourth nibble
+        NN = instruction & 0xff                # Second byte
+        NNN = instruction & 0xfff              # Second, third, and fourth nibbles
         
-        match instruction_type:
-            case 0x0:
-                self.clear_screen()
+        match opcode:
+            case 0x0: 
+                match NN:
+                    case 0xE0: # 00E0 - Done
+                        self.clear_screen()
+                    case 0xEE: # 00EE - Done
+                        self.return_from_subroutine()
                 
-            case 0x1:
+            case 0x1: # 1NNN - Done
                 self.jump_program_counter(NNN)
                 
-            case 0x6:
+            case 0x2: # 2NNN - Done
+                self.call_subroutine(NNN)
+                
+            case 0x3: # 3XNN - Done
+                self.skip_instruction(0x3, X, Y, NN)
+            
+            case 0x4: # 4XNN - Done
+                self.skip_instruction(0x4, X, Y, NN)
+            
+            case 0x5: # 5XY0 - Done
+                self.skip_instruction(0x5, X, Y, NN)
+                
+            case 0x6: # 6XNN - Done
                 self.set_register_vx(X, NN)
                 
-            case 0x7:
+            case 0x7: # 7XNN - Done
                 self.add_to_register_vx(X, NN)
+                
+            case 0x8:
+                match N:
+                    case 0x0: # 8XY0
+                        self.set_register_vx(X, self.register_v[Y])
+                        
+                    case 0x1: # 8XY1
+                        value = self.register_v[X] | self.register_v[Y]
+                        self.set_register_vx(X, value)
+                    
+                    case 0x2: # 8XY2
+                        value = self.register_v[X] & self.register_v[Y]
+                        self.set_register_vx(X, value)
+                    
+                    case 0x3: # 8XY3
+                        value = self.register_v[X] ^ self.register_v[Y]
+                        self.set_register_vx(X, value)
+                        
+                    case 0x4: # 8XY4
+                        value = self.register_v[X] + self.register_v[Y]
+                        value = value if value < 255 else 0
+                        self.set_register_vx(X, value)
+                        
+                    case 0x5: # 8XY5
+                        pass
+                    
+                    case 0x6: # 8XY6
+                        pass
+                    
+                    case 0x7: # 8XY7
+                        pass
+                    
+                    case 0xE: # 8XYE
+                        pass
+                    
+                    
+            case 0x9: # 9XY0 - Done
+                self.skip_instruction(0x9, X, Y, NN)
                             
-            case 0xA:
+            case 0xA: # ANNN - Done
                 self.set_index(NNN)
                 
-            case 0xD:
-                self.draw_sprite(X, Y, N)
+            case 0xB: # BNNN
+                pass
+            
+            case 0xC: # CXNN - Done
+                self.random_set(NN, X)
+            
+            case 0xE: 
+                match NN:
+                    case 0x9E: # EX9E
+                        pass
+                    case 0xA1: # EXA1
+                        pass
+               
+            case 0xD: # DXYN - Done
+                self.draw_sprite(X, Y, N)     
                 
-            case _:
+            case 0xF: 
+                match NN:
+                    case 0x07: # FX07
+                        pass
+                    case 0x0A: # FX0A
+                        pass  
+                    case 0x15: # FX15
+                        pass
+                    case 0x18: # FX18
+                        pass
+                    case 0x1E: # FX1E
+                        pass  
+                    case 0x29: # FX29
+                        pass
+                    case 0x33: # FX33
+                        pass
+                    case 0x55: # FX55
+                        pass  
+                    case 0x65: # FX65
+                        pass
+
+            case _: # Unknown
                 print("Unknown instruction {:x}".format(instruction))
                 
     def clear_screen(self):
-        print("Screen Cleared\n\n")
+        self.display.clear_screen()
+        
+    def call_subroutine(self,NNN):
+        self.memory_stack.append(self.pc)
+        self.pc = NNN
+    
+    def return_from_subroutine(self):
+        self.pc = self.memory_stack.pop(-1)
     
     def jump_program_counter(self, NNN):
         self.pc = NNN
-        print("PC Jump\n\n")
-    
-    def set_register_vx(self, X, NN):
-        self.register_v[X] = NN
-        print("Set register vx to NN\n\n")
+            
+    def set_register_vx(self, X, value):
+        self.register_v[X] = value
     
     def add_to_register_vx(self, X, NN):
         self.register_v[X] += NN
-        print("Add NN to register vx\n\n")
 
-    
     def set_index(self, NNN):
         self.register_I = NNN
-        print("Set register I to NNN\n\n")
-    
-    
+     
+    def skip_instruction(self, opcode, X, Y, NN):
+        if opcode == 0x3 and self.register_v[X] == NN:
+            self.pc += 2
+        
+        if opcode == 0x4 and self.register_v[X] != NN:
+            self.pc += 2
+        
+        if opcode == 0x5 and self.register_v[X] == self.register_v[Y]:
+            self.pc += 2
+        
+        if opcode == 0x9 and self.register_v[X] != self.register_v[Y]:
+            self.pc += 2
+            
+    def random_set(self, NN, X):
+        num = random.randrange(255)
+        self.register_v[X] = num & NN
+        
     def draw_sprite(self, X, Y, N):
         x_axis = self.register_v[X] % 64
         y_axis = self.register_v[Y] % 32
         self.register_v[0xf] = 0   
-
+        print("\nNew Draw")
+        
         for row in range(N):
             current_sprite = "{0:08b}".format(self.memory[self.register_I + row])
-            print("\nSprite: {0}".format(current_sprite))
+            print("Sprite: {0}".format(current_sprite))
             
-            for pixel in current_sprite:
+            for column, pixel in enumerate(current_sprite):
                 
-                if x_axis >= 64:
+                if (x_axis+column) >= 64:
                     break
-                
-                screen_pixel = self.pixels_on_screen[x_axis][y_axis]
-                print("Sprite Pixel: {0}  Screen Pixel: {1}".format(pixel, screen_pixel))
+
+                screen_pixel = self.pixels_on_screen[x_axis+column][y_axis]
                  
                 if pixel == "1" and screen_pixel == 1:
-                    self.pixels_on_screen[x_axis][y_axis] = 0      
+                    self.pixels_on_screen[x_axis+column][y_axis] = 0      
                     self.register_v[0xf] = 1
-                    self.display.delete_pixel(x_axis, y_axis)
-                    print("Delete at {0} {1}".format(x_axis,y_axis))
+                    self.display.delete_pixel(x_axis+column, y_axis)
                     
                 if pixel == "1" and screen_pixel == 0:
-                    self.pixels_on_screen[x_axis][y_axis] = 1
-                    self.display.draw_pixel(x_axis, y_axis)
-                    print("Draw at {0} {1}".format(x_axis,y_axis))
+                    self.pixels_on_screen[x_axis+column][y_axis] = 1
+                    self.display.draw_pixel(x_axis+column, y_axis)
                 
-                x_axis+=1
             y_axis+=1
             
             if y_axis >= 32:
@@ -169,10 +271,9 @@ class CPU:
 class Screen:
     def __init__(self) -> None:
         pygame.init()
-        self.x_axis = 0
-        self.y_axis = 0
-        self.clear = False
-        self.screen = pygame.display.set_mode((640,320))
+        scaling_factor = 10
+        self.screen = pygame.display.set_mode((64*scaling_factor,32*scaling_factor))
+        self.w = pygame.Surface((64,32))
         pygame.display.set_caption("CHIP 8 Emulator")    
     
     def draw_pixel(self, x_axis, y_axis):
