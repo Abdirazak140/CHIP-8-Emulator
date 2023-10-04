@@ -3,6 +3,7 @@ import pygame
 import time
 import random
 import keyboard
+import threading
 
 class CPU:
     def __init__(self, file_name):
@@ -38,7 +39,14 @@ class CPU:
         self.delay_timer = 0
         self.sound_timer = 0
         self.display = Screen()
-        self.init_ROM(file_name)
+        
+        main_thread = threading.Thread(target=self.init_ROM, args=(file_name,))
+        sound_thread = threading.Thread(target=self.init_sound_timer, args=())
+        delay_thread = threading.Thread(target=self.init_delay_timer, args=())
+        
+        main_thread.start()
+        sound_thread.start()
+        delay_thread.start()
         
         
     def init_ROM(self, file_name):
@@ -53,7 +61,20 @@ class CPU:
         except Exception as e:
             print(e)
             exit()
+    
+    def init_sound_timer(self):
         
+        while True:
+            if self.sound_timer > 0:
+                self.beep()
+                self.sound_timer -= 1
+            time.sleep(0.02)
+                
+    def init_delay_timer(self):
+        
+        while True:
+            self.delay_timer -= 1
+            time.sleep(0.02)
     
     def fetch_instructions(self):
         num_of_intructions = 0
@@ -131,60 +152,50 @@ class CPU:
                             self.set_register_vx(X, self.register_v[Y])
                             
                         case 0x1: # 8XY1
-                            value = self.register_v[X] | self.register_v[Y]
-                            self.set_register_vx(X, value)
+                            self.set_register_vx(X, self.register_v[X] | self.register_v[Y])
                         
                         case 0x2: # 8XY2 
-                            value = self.register_v[X] & self.register_v[Y]
-                            self.set_register_vx(X, value)
+                            self.set_register_vx(X, self.register_v[X] & self.register_v[Y])
                         
                         case 0x3: # 8XY3 
-                            value = self.register_v[X] ^ self.register_v[Y]
-                            self.set_register_vx(X, value)
+                            self.set_register_vx(X, self.register_v[X] ^ self.register_v[Y])
                             
                         case 0x4: # 8XY4 
-                            value = self.register_v[X] + self.register_v[Y]
-                            if value > 255:
+                            if (self.register_v[X] + self.register_v[Y]) > 255:
                                 self.set_register_vx(0xF, 1)
                             else:
                                 self.set_register_vx(0xF, 0)
-                            self.set_register_vx(X, value)
+                            self.set_register_vx(X, self.register_v[X] + self.register_v[Y])
                             
                         case 0x5: # 8XY5 
-                            value = self.register_v[X] - self.register_v[Y]
                             if self.register_v[X] > self.register_v[Y]:
                                 self.set_register_vx(0xF, 1)
                             else:
                                 self.set_register_vx(0xF, 0)
                                 
-                            self.set_register_vx(X, value)
+                            self.set_register_vx(X, self.register_v[X] - self.register_v[Y])
                         
                         case 0x6: # 8XY6 
-                            value = self.register_v[Y] >> 1
-                            bit  = self.register_v[Y] & 1
-                            if bit == 1:
+                            if (self.register_v[Y] & 1) == 1:
                                 self.set_register_vx(0xF, 1)
                             else:
                                 self.set_register_vx(0xF, 0)
-                            self.set_register_vx(X, value)
+                            self.set_register_vx(X, self.register_v[Y] >> 1)
                         
                         case 0x7: # 8XY7
-                            value = self.register_v[Y] - self.register_v[X]
                             if self.register_v[Y] > self.register_v[X]:
                                 self.set_register_vx(0xF, 1)
                             else:
                                 self.set_register_vx(0xF, 0)
                                 
-                            self.set_register_vx(X, value)
+                            self.set_register_vx(X, self.register_v[Y] - self.register_v[X])
                         
                         case 0xE: # 8XYE 
-                            value = self.register_v[Y] << 1
-                            bit  = (self.register_v[Y] >> 7) & 1
-                            if bit == 1:
+                            if ((self.register_v[Y] >> 7) & 1) == 1:
                                 self.set_register_vx(0xF, 1)
                             else:
                                 self.set_register_vx(0xF, 0)
-                            self.set_register_vx(X, value)
+                            self.set_register_vx(X, self.register_v[Y] << 1)
                         
                         
                 case 0x9: # 9XY0
@@ -192,7 +203,7 @@ class CPU:
                         self.skip_instruction()
                                 
                 case 0xA: # ANNN
-                    self.set_index(NNN)
+                    self.set_register_I(NNN)
                     
                 case 0xB: # BNNN
                     self.jump_program_counter(NNN+self.register_v[0])
@@ -203,10 +214,12 @@ class CPU:
                 case 0xE: 
                     match NN:
                         case 0x9E: # EX9E
-                            print("Not implemented")
+                            if int("0x".join(keyboard.read_key), 16) == self.register_v[X]:
+                                self.skip_instruction()
                             
                         case 0xA1: # EXA1
-                            print("Not implemented")
+                            if int("0x".join(keyboard.read_key), 16) != self.register_v[X]:
+                                self.skip_instruction()
                 
                 case 0xD: # DXYN 
                     self.draw_sprite(X, Y, N)     
@@ -226,10 +239,10 @@ class CPU:
                             self.set_sound_timer(X)
                             
                         case 0x1E: # FX1E 
-                            self.add_to_index(X)
+                            self.add_to_register_I(X)
                             
                         case 0x29: # FX29
-                            print("Not implemented")
+                            self.set_register_I(5*self.register_v[X])
                             
                         case 0x33: # FX33 
                             self.binary_coded_decimal(X)
@@ -244,52 +257,53 @@ class CPU:
                     print("Unknown instruction {:x}".format(instruction))
                 
     def clear_screen(self):
-        # print("Clear display")
+        print("Clear display")
         self.display.clear_screen()
         
-    def call_subroutine(self, NNN):
-        # print("Call subroutine")
+    def call_subroutine(self, value):
+        print("Call subroutine")
         self.memory_stack.append(self.pc+2)
-        self.pc = NNN
+        self.pc = value
         self.pc_flag = True
     
     def return_from_subroutine(self):
-        # print("Return from subroutine")
+        print("Return from subroutine")
         self.pc = self.memory_stack.pop(-1)
         self.pc_flag = True
     
-    def jump_program_counter(self, NNN):
-        # print("Jump")
-        self.pc = NNN
+    def jump_program_counter(self, value):
+        print("Jump")
+        self.pc = value
         self.pc_flag = True
             
     def set_register_vx(self, X, value):
-        # print("Set register vx")
+        print("Set register vx")
         self.register_v[X] = value
     
-    def add_to_register_vx(self, X, NN):
-        # print("Add to register vx")
-        self.register_v[X] += NN
+    def add_to_register_vx(self, X, value):
+        print("Add to register vx")
+        self.register_v[X] += value
 
-    def set_index(self, NNN):
-        # print("Set Index")
-        self.register_I = NNN
+    def set_register_I(self, value):
+        print("Set register I")
+        self.register_I = value
         
-    def add_to_index(self, X):
+    def add_to_register_I(self, X):
+        print("Add to register I")
         self.register_I += self.register_v[X]
      
     def skip_instruction(self):
-        # print("Skip Instruction") 
+        print("Skip Instruction") 
         self.pc += 2
         self.pc_flag = True
             
-    def random_set(self, NN, X):
-        # print("Random Set")
+    def random_set(self, value, X):
+        print("Random Set")
         num = random.randrange(255)
-        self.register_v[X] = num & NN
+        self.register_v[X] = num & value
         
     def draw_sprite(self, X, Y, N):
-        # print("Draw Sprite")
+        print("Draw Sprite")
         x_axis = self.register_v[X] % 64
         y_axis = self.register_v[Y] % 32
         
@@ -320,13 +334,15 @@ class CPU:
                 break
             
     def set_sound_timer(self, X):
+        print("Set sound timer")
         self.sound_timer = self.register_v[X]
         
     def set_delay_timer(self, X):
+        print("Set delay timer")
         self.delay_timer = self.register_v[X]
         
     def get_key(self, X):
-        
+        print("Get Key")
         while True:
             key = keyboard.read_key()
             
@@ -397,7 +413,7 @@ class Screen:
 
     
 def Emulator():
-    path = r"/home/abdi/Documents/GitHub/CHIP-8-emulator/test/IBM_logo2.ch8"
+    path = r"/home/abdi/Documents/GitHub/CHIP-8-emulator/test/corax.ch8"
     cpu = CPU(path)
     
 
