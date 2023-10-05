@@ -2,8 +2,9 @@ from math import floor
 import pygame
 import time
 import random
-import keyboard
+# import keyboard
 import threading
+# from playsound import playsound
 
 class CPU:
     def __init__(self, file_name):
@@ -66,14 +67,15 @@ class CPU:
         
         while True:
             if self.sound_timer > 0:
-                self.beep()
+                # playsound("../beep.wav")
                 self.sound_timer -= 1
             time.sleep(0.02)
                 
     def init_delay_timer(self):
         
         while True:
-            self.delay_timer -= 1
+            if self.delay_timer > 0:
+                self.delay_timer -= 1
             time.sleep(0.02)
     
     def fetch_instructions(self):
@@ -214,12 +216,14 @@ class CPU:
                 case 0xE: 
                     match NN:
                         case 0x9E: # EX9E
-                            if int("0x".join(keyboard.read_key), 16) == self.register_v[X]:
-                                self.skip_instruction()
+                            pass
+                            # if int("0x".join(keyboard.read_key), 16) == self.register_v[X]:
+                            #     self.skip_instruction()
                             
                         case 0xA1: # EXA1
-                            if int("0x".join(keyboard.read_key), 16) != self.register_v[X]:
-                                self.skip_instruction()
+                            pass
+                            # if int("0x".join(keyboard.read_key), 16) != self.register_v[X]:
+                            #     self.skip_instruction()
                 
                 case 0xD: # DXYN 
                     self.draw_sprite(X, Y, N)     
@@ -230,7 +234,8 @@ class CPU:
                             self.set_register_vx(X, self.delay_timer)
                             
                         case 0x0A: # FX0A
-                            self.get_key(X)
+                            pass
+                            # self.get_key(X)
                             
                         case 0x15: # FX15
                             self.set_delay_timer(X)
@@ -341,17 +346,17 @@ class CPU:
         print("Set delay timer")
         self.delay_timer = self.register_v[X]
         
-    def get_key(self, X):
-        print("Get Key")
-        while True:
-            key = keyboard.read_key()
+    # def get_key(self, X):
+    #     print("Get Key")
+    #     while True:
+    #         key = keyboard.read_key()
             
-            if key in "0123456789abcdef":
-                break
+    #         if key in "0123456789abcdef":
+    #             break
             
-        value = int("0x".join(key), 16)
+    #     value = int("0x".join(key), 16)
         
-        self.register_v[X] = value
+    #     self.register_v[X] = value
 
     def binary_coded_decimal(self, X):
         print("BCD")
@@ -413,7 +418,7 @@ class Screen:
 
     
 def Emulator():
-    path = r"/home/abdi/Documents/GitHub/CHIP-8-emulator/test/corax.ch8"
+    path = r"C:\Users\YusufAbd\Libraries\Documents\GitHub\CHIP-8-emulator\test\IBM_logo1.ch8"
     cpu = CPU(path)
     
 
