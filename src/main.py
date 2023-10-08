@@ -4,7 +4,7 @@ import time
 import random
 # import keyboard
 import threading
-# from playsound import playsound
+
 
 class CPU:
     def __init__(self, file_name):
@@ -36,7 +36,8 @@ class CPU:
         for i in range(len(font)):
             self.memory[i] = font[i]
         
-        self.pixels_on_screen = [[0]*32]*64
+        self.pixels_on_screen = [[0] * 32 for i in range(64)]
+
         self.delay_timer = 0
         self.sound_timer = 0
         self.display = Screen()
@@ -67,7 +68,6 @@ class CPU:
         
         while True:
             if self.sound_timer > 0:
-                # playsound("../beep.wav")
                 self.sound_timer -= 1
             time.sleep(0.02)
                 
@@ -81,7 +81,7 @@ class CPU:
     def fetch_instructions(self):
         num_of_intructions = 0
         start = time.time()
-        print(self.register_v)
+    
         while self.pc < len(self.memory):
             time.sleep(0.01)
             num_of_intructions+=1
@@ -217,13 +217,9 @@ class CPU:
                     match NN:
                         case 0x9E: # EX9E
                             pass
-                            # if int("0x".join(keyboard.read_key), 16) == self.register_v[X]:
-                            #     self.skip_instruction()
                             
                         case 0xA1: # EXA1
                             pass
-                            # if int("0x".join(keyboard.read_key), 16) != self.register_v[X]:
-                            #     self.skip_instruction()
                 
                 case 0xD: # DXYN 
                     self.draw_sprite(X, Y, N)     
@@ -234,8 +230,7 @@ class CPU:
                             self.set_register_vx(X, self.delay_timer)
                             
                         case 0x0A: # FX0A
-                            pass
-                            # self.get_key(X)
+                            self.get_key(X)
                             
                         case 0x15: # FX15
                             self.set_delay_timer(X)
@@ -332,6 +327,7 @@ class CPU:
                 if pixel == "1" and screen_pixel == 0:
                     self.pixels_on_screen[x_axis+column][y_axis] = 1
                     self.display.draw_pixel(x_axis+column, y_axis)
+            
                 
             y_axis+=1
             
@@ -346,17 +342,8 @@ class CPU:
         print("Set delay timer")
         self.delay_timer = self.register_v[X]
         
-    # def get_key(self, X):
-    #     print("Get Key")
-    #     while True:
-    #         key = keyboard.read_key()
-            
-    #         if key in "0123456789abcdef":
-    #             break
-            
-    #     value = int("0x".join(key), 16)
-        
-    #     self.register_v[X] = value
+    def get_key(self, X):
+        print("Get Key")
 
     def binary_coded_decimal(self, X):
         print("BCD")
@@ -380,7 +367,7 @@ class CPU:
 class Screen:
     def __init__(self) -> None:
         pygame.init()
-        self.scaling_factor = 4
+        self.scaling_factor = 3
         self.screen = pygame.display.set_mode((64*self.scaling_factor,32*self.scaling_factor))
         pygame.display.set_caption("CHIP 8 Emulator")    
     
@@ -418,7 +405,7 @@ class Screen:
 
     
 def Emulator():
-    path = r"C:\Users\YusufAbd\Libraries\Documents\GitHub\CHIP-8-emulator\test\IBM_logo1.ch8"
+    path = r"/home/abdi/Documents/GitHub/CHIP-8-emulator/test/IBM_logo1.ch8"
     cpu = CPU(path)
     
 
