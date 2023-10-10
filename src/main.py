@@ -2,8 +2,8 @@ from cpu import CPU
 
         
 def Interpreter():
-    path = r"C:\Users\YusufAbd\Libraries\Documents\GitHub\CHIP-8-emulator\test\keypad.ch8"
-    cpu = CPU(path)
+    rom_path = r"C:\Users\YusufAbd\Downloads\c8games\MERLIN"
+    cpu = CPU(rom_path)
     
 
 
