@@ -12,17 +12,19 @@ class Keypad:
         }
     
     def getKeyEvent(self):
+        print("Get key")
         while True:
             key = keyboard.read_key()
             
-            if key in self.keys:
+            if key.upper() in self.keys:
+                print(key, type(key))
                 break
 
-        return self.keys[key]
+        return self.keys[key.upper()]
     
     def keyOperationEvent(self, value):
+        print("Key operation")
         key = list(self.keys.values()).index(value)
-        print(key)
         if keyboard.is_pressed(key):
             return True
         else:
