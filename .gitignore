@@ -1,3 +1,4 @@
 test.py
 .venv
 note.txt
+src/__pycache__
