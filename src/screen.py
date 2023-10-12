@@ -3,10 +3,9 @@ import pygame
 
 class Screen:
     def __init__(self) -> None:
-        pygame.init()
-        self.scaling_factor = 18
+        self.scaling_factor = 6
         self.screen = pygame.display.set_mode((64*self.scaling_factor,32*self.scaling_factor))
-        pygame.display.set_caption("CHIP 8 Emulator")    
+        pygame.display.set_caption("CHIP 8 Emulator")
     
     def draw_pixel(self, x_axis, y_axis):
         pixel_size = self.scaling_factor-1
