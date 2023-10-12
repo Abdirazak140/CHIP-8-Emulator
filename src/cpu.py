@@ -4,6 +4,8 @@ import threading
 from math import floor
 from screen import Screen
 from keypad import Keypad
+import pygame
+
 
 class CPU:
     def __init__(self, file_name):
@@ -65,9 +67,10 @@ class CPU:
             exit()
     
     def init_sound_timer(self):
-        
+        beep_sound = pygame.mixer.Sound("../beep.wav")
         while True:
             if self.sound_timer > 0:
+                pygame.mixer.Sound.play(beep_sound)
                 self.sound_timer -= 1
             time.sleep(0.02)
                 
@@ -217,11 +220,11 @@ class CPU:
                 case 0xE: 
                     match NN:
                         case 0x9E: # EX9E
-                            if self.keypad.keyOperationEvent(self.register_v[X]):
+                            if self.keypad.keyOperation(self.register_v[X]):
                                 self.skip_instruction()
                             
                         case 0xA1: # EXA1
-                            if not self.keypad.keyOperationEvent(self.register_v[X]):
+                            if not self.keypad.keyOperation(self.register_v[X]):
                                 self.skip_instruction()
                 
                 case 0xD: # DXYN 
@@ -233,7 +236,7 @@ class CPU:
                             self.set_register_v(X, self.delay_timer)
                             
                         case 0x0A: # FX0A
-                            self.set_register_v(X, self.keypad.getKeyEvent())
+                            self.set_register_v(X, self.keypad.getKey())
                             
                         case 0x15: # FX15
                             self.set_delay_timer(X)
