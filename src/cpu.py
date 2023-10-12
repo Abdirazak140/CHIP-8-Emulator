@@ -161,23 +161,26 @@ class CPU:
                             self.set_register_v(X, self.register_v[X] ^ self.register_v[Y])
                             
                         case 0x4: # 8XY4 
-                            self.set_register_v(X, self.register_v[X] + self.register_v[Y])
-                            if (self.register_v[X] + self.register_v[Y]) > 255:
+                            value = self.register_v[X] + self.register_v[Y]
+                            self.set_register_v(X, value)
+                            if value > 255:
                                 self.set_register_v(0xF, 1)
                             else:
                                 self.set_register_v(0xF, 0)
                             
-                        case 0x5: # 8XY5 
-                            self.add_to_register_v(X, -self.register_v[Y])
-                            if self.register_v[Y] < self.register_v[X]:
+                        case 0x5: # 8XY5
+                            first_value = self.register_v[X]
+                            second_value = self.register_v[Y]
+                            self.add_to_register_v(X, -second_value)
+                            if second_value < first_value:
                                 self.set_register_v(0xF, 1)
                             else:
                                 self.set_register_v(0xF, 0)
                             
                         case 0x6: # 8XY6 
-                            bit = self.register_v[X] >> 1
-                            self.set_register_v(X, bit)
-                            if bit == 1:
+                            original_value = self.register_v[X]
+                            self.set_register_v(X, self.register_v[X] >> 1)
+                            if original_value & 1 == 1:
                                 self.set_register_v(0xF, 1)
                             else:
                                 self.set_register_v(0xF, 0)
@@ -191,14 +194,13 @@ class CPU:
                                 self.set_register_v(0xF, 0)
                         
                         case 0xE: # 8XYE 
-                            bit = self.register_v[X] << 1
-                            self.set_register_v(X, bit)
-                            if bit == 1:
+                            shifted_value = self.register_v[X] << 1
+                            self.set_register_v(X, shifted_value)
+                            if shifted_value >> 8 == 1:
                                 self.set_register_v(0xF, 1)
                             else:
                                 self.set_register_v(0xF, 0)
-                        
-                        
+                                                 
                 case 0x9: # 9XY0
                     if self.register_v[X] != self.register_v[Y]:
                         self.skip_instruction()
