@@ -5,6 +5,7 @@ from math import floor
 from screen import Screen
 from keypad import Keypad
 import pygame
+import os
 
 
 class CPU:
@@ -60,14 +61,16 @@ class CPU:
         
                 for i, byte in enumerate(program_data):
                     self.memory[0x200 + i] = byte
-
+                    
                 self.fetch_instructions()                
         except Exception as e:
             print(e)
             exit()
     
     def init_sound_timer(self):
-        beep_sound = pygame.mixer.Sound("../beep.wav")
+        pygame.mixer.init()
+        beep_path = os.path.join(os.path.dirname(__file__), '../beep.mp3')
+        beep_sound = pygame.mixer.Sound(beep_path)
         while True:
             if self.sound_timer > 0:
                 pygame.mixer.Sound.play(beep_sound)
@@ -108,11 +111,11 @@ class CPU:
     def decode_instruction(self, instruction):
         opcode = instruction >> 12
         
-        X = (instruction >> 8) & 0xf           # Second nibble
-        Y = (instruction >> 4) & 0xfff & 0xf   # Third nibble
-        N = instruction & 0xf                  # Fourth nibble
-        NN = instruction & 0xff                # Second byte
-        NNN = instruction & 0xfff              # Second, third, and fourth nibbles
+        X = (instruction >> 8) & 0xF           # Second nibble
+        Y = (instruction >> 4) & 0xFFF & 0xF   # Third nibble
+        N = instruction & 0xF                  # Fourth nibble
+        NN = instruction & 0xFF                # Second byte
+        NNN = instruction & 0xFFF              # Second, third, and fourth nibbles
         
         if instruction == 0x0000:
             print("No instruction")
