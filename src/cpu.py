@@ -39,19 +39,17 @@ class CPU:
             self.memory[i] = font[i]
         
         self.pixels_on_screen = [[0] * 32 for i in range(64)]
-
+        self.display = Screen()
         self.delay_timer = 0
         self.sound_timer = 0
-        self.display = Screen()
         self.keypad = Keypad()
         
-        main_thread = threading.Thread(target=self.init_ROM, args=(file_name,))
-        sound_thread = threading.Thread(target=self.init_sound_timer, args=())
-        delay_thread = threading.Thread(target=self.init_delay_timer, args=())
-        
-        main_thread.start()
+        sound_thread = threading.Thread(target=self.init_sound_timer, args=(), daemon=True)
+        delay_thread = threading.Thread(target=self.init_delay_timer, args=(), daemon=True)
         sound_thread.start()
         delay_thread.start()
+        
+        self.init_ROM(file_name)
         
         
     def init_ROM(self, file_name):
@@ -85,11 +83,19 @@ class CPU:
             time.sleep(0.02)
     
     def fetch_instructions(self):
+        
         num_of_intructions = 0
         start = time.time()
     
         while self.pc < len(self.memory):
-            time.sleep(0.004)
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    exit()
+                    
+            # pygame.event.pump()
+            
+            time.sleep(0.001)
             num_of_intructions+=1
                 
             first_byte = self.memory[self.pc]
