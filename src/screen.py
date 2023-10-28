@@ -3,7 +3,7 @@ import pygame
 
 class Screen:
     def __init__(self) -> None:
-        self.scaling_factor = 6
+        self.scaling_factor = 5
         self.screen = pygame.display.set_mode((64*self.scaling_factor,32*self.scaling_factor))
         pygame.display.set_caption("CHIP 8 Emulator")
     
@@ -35,6 +35,4 @@ class Screen:
         self.screen.fill((0,0,0))
         pygame.display.flip()
     
-    def quit(self):
-        pygame.quit()
         
