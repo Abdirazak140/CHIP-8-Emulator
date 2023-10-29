@@ -92,8 +92,6 @@ class CPU:
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     exit()
-                    
-            # pygame.event.pump()
             
             time.sleep(0.001)
             num_of_intructions+=1
@@ -129,7 +127,8 @@ class CPU:
             match opcode:
                 case 0x0: 
                     match NNN:
-                        case 0xE0: # 00E0 
+                        case 0xE0: # 00E0
+                            self.pixels_on_screen = [[0] * 32 for i in range(64)]
                             self.display.clear_screen()
                         case 0xEE: # 00EE
                             self.return_from_subroutine()
@@ -184,7 +183,7 @@ class CPU:
                             first_value = self.register_v[X]
                             second_value = self.register_v[Y]
                             self.add_to_register_v(X, -second_value)
-                            if second_value < first_value:
+                            if second_value <= first_value:
                                 self.set_register_v(0xF, 1)
                             else:
                                 self.set_register_v(0xF, 0)
@@ -200,7 +199,7 @@ class CPU:
                         
                         case 0x7: # 8XY7
                             self.set_register_v(X, self.register_v[Y] - self.register_v[X])
-                            if self.register_v[Y] > self.register_v[X]:
+                            if self.register_v[Y] >= self.register_v[X]:
                                 self.set_register_v(0xF, 1)
                             else:
                                 self.set_register_v(0xF, 0)
