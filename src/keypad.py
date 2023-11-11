@@ -1,4 +1,5 @@
 import keyboard
+import pygame
 
 
 class Keypad:
@@ -20,8 +21,11 @@ class Keypad:
     def getKey(self):
         print("Get Value from key")
         while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    exit()
             key = keyboard.read_key()
-            
             if key.upper() in self.values_dict:
                 break
 
